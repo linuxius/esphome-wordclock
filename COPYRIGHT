@@ -1,0 +1,8 @@
+WordClock ESPHome component
+Copyright (c) 2026 Peter Visser
+
+Unless otherwise noted, source files in this repository are licensed under:
+GPL-3.0-or-later
+
+Some portions of the low-level LED driver path were adapted from ESPHome's
+esp32_rmt_led_strip implementation. See NOTICE.md for attribution details.
