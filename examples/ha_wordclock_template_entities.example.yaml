@@ -1,0 +1,83 @@
+# Home Assistant package: template entities for Word Clock advanced controls
+# Include this file in HA (packages or split config), then reload template entities.
+#
+# Creates:
+# - select.word_clock_effect
+# - number.word_clock_transition
+# - button.word_clock_flash
+# - button.word_clock_long_flash
+
+input_number:
+  word_clock_transition:
+    name: Word Clock Transition (Internal)
+    min: 0
+    max: 30
+    step: 1
+    unit_of_measurement: s
+    mode: slider
+    icon: mdi:timer-outline
+
+template:
+  - select:
+      - name: Word Clock Effect
+        unique_id: word_clock_effect
+        icon: mdi:magic-staff
+        state: "{{ state_attr('light.word_clock', 'effect') | default('None', true) }}"
+        options: "{{ state_attr('light.word_clock', 'effect_list') or ['None'] }}"
+        availability: "{{ states('light.word_clock') not in ['unavailable', 'unknown'] }}"
+        select_option:
+          - choose:
+              - conditions: "{{ option != 'None' }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: light.word_clock
+                    data:
+                      effect: "{{ option }}"
+                      transition: "{{ states('input_number.word_clock_transition') | int(1) }}"
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: light.word_clock
+                data:
+                  transition: "{{ states('input_number.word_clock_transition') | int(1) }}"
+
+  - number:
+      - name: Word Clock Transition
+        unique_id: word_clock_transition
+        icon: mdi:timer-outline
+        unit_of_measurement: s
+        min: 0
+        max: 30
+        step: 1
+        state: "{{ states('input_number.word_clock_transition') | float(1) }}"
+        availability: "{{ states('input_number.word_clock_transition') not in ['unavailable', 'unknown'] }}"
+        set_value:
+          - action: input_number.set_value
+            target:
+              entity_id: input_number.word_clock_transition
+            data:
+              value: "{{ value }}"
+
+  - button:
+      - name: Word Clock Flash
+        unique_id: word_clock_flash
+        icon: mdi:flash-outline
+        availability: "{{ states('light.word_clock') not in ['unavailable', 'unknown'] }}"
+        press:
+          - action: light.turn_on
+            target:
+              entity_id: light.word_clock
+            data:
+              flash: short
+
+      - name: Word Clock Long Flash
+        unique_id: word_clock_long_flash
+        icon: mdi:flash
+        availability: "{{ states('light.word_clock') not in ['unavailable', 'unknown'] }}"
+        press:
+          - action: light.turn_on
+            target:
+              entity_id: light.word_clock
+            data:
+              flash: long

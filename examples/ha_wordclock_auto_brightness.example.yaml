@@ -1,0 +1,68 @@
+# Home Assistant automation: WordClock auto-brightness from solar radiation
+# Add this block to your HA `automations.yaml` (or import via UI in YAML mode).
+#
+# Expected entities:
+# - sensor.solar_radiation_wm2
+# - light.word_clock
+#
+# Tune `min_pct`, `max_pct`, and `max_wm2` to your room and panel brightness.
+
+- id: word_clock_auto_brightness
+  alias: Word Clock - Auto Brightness (Solar Radiation)
+  description: >
+    Adjust Word Clock brightness based on current solar radiation from the weather station.
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: sensor.solar_radiation_wm2
+      id: solar_update
+    - platform: time_pattern
+      minutes: "/5"
+      id: periodic_resync
+    - platform: state
+      entity_id: light.word_clock
+      to: "on"
+      id: light_on
+    - platform: homeassistant
+      event: start
+      id: ha_start
+
+  condition:
+    - condition: state
+      entity_id: light.word_clock
+      state: "on"
+
+  variables:
+    solar_wm2: "{{ states('sensor.solar_radiation_wm2') | float(0) }}"
+    solar_prev_wm2: >
+      {% if trigger.id == 'solar_update' and trigger.from_state is not none %}
+        {{ trigger.from_state.state | float(0) }}
+      {% else %}
+        {{ solar_wm2 }}
+      {% endif %}
+    solar_delta_wm2: "{{ (solar_wm2 - solar_prev_wm2) | abs }}"
+    min_pct: 12
+    max_pct: 100
+    max_wm2: 800
+    target_pct: >
+      {% set raw = min_pct + (solar_wm2 / max_wm2) * (max_pct - min_pct) %}
+      {% set clamped = [max_pct, [min_pct, raw] | max] | min %}
+      {{ clamped | round(0) | int }}
+    target_brightness_255: "{{ (target_pct / 100 * 255) | round(0) | int }}"
+    current_brightness_255: "{{ state_attr('light.word_clock', 'brightness') | int(0) }}"
+
+  action:
+    - condition: template
+      value_template: >
+        {{ (current_brightness_255 - target_brightness_255) | abs >= 8 }}
+    - service: light.turn_on
+      target:
+        entity_id: light.word_clock
+      data:
+        brightness_pct: "{{ target_pct }}"
+        transition: >
+          {% if solar_delta_wm2 >= 150 %}
+            1
+          {% else %}
+            2
+          {% endif %}

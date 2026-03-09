@@ -1,0 +1,155 @@
+# Home Assistant Lovelace dashboard template for HA 2026.3+ (Sections view).
+# Paste into a manual dashboard (Raw configuration editor) or adapt per-view.
+#
+# Required entity:
+#   light.word_clock
+#
+# Color preset dropdown entity (adjust if your entity_id differs):
+#   select.word_clock_color_preset
+#
+# Auto/manual mode entities:
+#   automation.word_clock_auto_brightness
+#   script.word_clock_enable_auto_brightness
+#   script.word_clock_preset_night
+#   script.word_clock_preset_evening
+#   script.word_clock_preset_day
+#   script.word_clock_preset_off
+#
+# Optional helper entities (if HA generated them):
+#   select.word_clock_effect
+#   number.word_clock_transition
+#   button.word_clock_flash
+#   button.word_clock_long_flash
+
+title: Word Clock
+views:
+  - type: sections
+    title: Word Clock
+    path: word-clock
+    icon: mdi:clock-time-four-outline
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Word Clock
+            icon: mdi:clock-time-four-outline
+
+          - type: tile
+            entity: light.word_clock
+            name: Clock
+            vertical: false
+            tap_action:
+              action: toggle
+            hold_action:
+              action: more-info
+            features_position: bottom
+            features:
+              - type: light-brightness
+
+          - type: entities
+            title: Clock Settings
+            show_header_toggle: false
+            entities:
+              - entity: select.word_clock_color_preset
+                name: Color preset
+              - entity: automation.word_clock_auto_brightness
+                name: Auto brightness
+              - entity: light.word_clock
+                name: Current state
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Brightness Presets
+            icon: mdi:tune-variant
+
+          - type: grid
+            columns: 5
+            square: false
+            cards:
+              - type: button
+                name: Auto
+                icon: mdi:auto-mode
+                tap_action:
+                  action: call-service
+                  service: script.turn_on
+                  target:
+                    entity_id: script.word_clock_enable_auto_brightness
+
+              - type: button
+                name: Night
+                icon: mdi:weather-night
+                tap_action:
+                  action: call-service
+                  service: script.turn_on
+                  target:
+                    entity_id: script.word_clock_preset_night
+
+              - type: button
+                name: Evening
+                icon: mdi:weather-sunset
+                tap_action:
+                  action: call-service
+                  service: script.turn_on
+                  target:
+                    entity_id: script.word_clock_preset_evening
+
+              - type: button
+                name: Day
+                icon: mdi:white-balance-sunny
+                tap_action:
+                  action: call-service
+                  service: script.turn_on
+                  target:
+                    entity_id: script.word_clock_preset_day
+
+              - type: button
+                name: Off
+                icon: mdi:power
+                tap_action:
+                  action: call-service
+                  service: script.turn_on
+                  target:
+                    entity_id: script.word_clock_preset_off
+
+      # Optional advanced controls (uncomment and adjust entity IDs if needed):
+      #
+      # - type: grid
+      #   cards:
+      #     - type: heading
+      #       heading: Advanced
+      #       icon: mdi:cog
+      #
+      #     - type: grid
+      #       columns: 3
+      #       square: false
+      #       cards:
+      #         - type: button
+      #           name: Flash
+      #           icon: mdi:flash-outline
+      #           tap_action:
+      #             action: call-service
+      #             service: light.turn_on
+      #             target:
+      #               entity_id: light.word_clock
+      #             data:
+      #               flash: short
+      #         - type: button
+      #           name: Long flash
+      #           icon: mdi:flash
+      #           tap_action:
+      #             action: call-service
+      #             service: light.turn_on
+      #             target:
+      #               entity_id: light.word_clock
+      #             data:
+      #               flash: long
+      #         - type: button
+      #           name: Re-sync Auto
+      #           icon: mdi:brightness-auto
+      #           tap_action:
+      #             action: call-service
+      #             service: script.turn_on
+      #             target:
+      #               entity_id: script.word_clock_enable_auto_brightness
