@@ -12,6 +12,10 @@ Only the Swiss German layout (`ch`) has been tested on hardware so far.
 The English (`en`) and German (`de`) layouts are included, but may not work
 correctly yet.
 
+Only RGB `WS2812B` has been tested on hardware so far.
+RGBW (for example `SK6812`) is supported in configuration, but has not been
+validated on hardware yet.
+
 ## Repository Layout
 
 - `components/wordclock/` component source
