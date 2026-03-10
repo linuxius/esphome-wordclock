@@ -15,7 +15,6 @@
 #   script.word_clock_preset_night
 #   script.word_clock_preset_evening
 #   script.word_clock_preset_day
-#   script.word_clock_preset_off
 #
 # Optional helper entities (if HA generated them):
 #   select.word_clock_effect
