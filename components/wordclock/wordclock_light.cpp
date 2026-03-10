@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <cmath>
 #include <cstring>
 
 namespace wordclock {
@@ -41,6 +42,9 @@ static const uint16_t TEXT_MATRIX_LED_COUNT =
 static const uint32_t SPLASH_FRAME_INTERVAL_MS = 70;
 static const uint32_t LED_TEST_STEP_INTERVAL_MS = 500;
 static const uint8_t SPLASH_TRAIL_LENGTH = 3;
+static const uint32_t BRIGHTNESS_REFRESH_MIN_INTERVAL_MS = 150;
+static const uint32_t RAINBOW_RENDER_INTERVAL_MS = 150;
+static const float BRIGHTNESS_EPSILON = 0.001f;
 
 void WordClockLight::set_led_params_(uint32_t bit0_high, uint32_t bit0_low,
                                      uint32_t bit1_high, uint32_t bit1_low,
@@ -347,7 +351,9 @@ void WordClockLight::apply_rainbow_to_lit_pixels_() {
       continue;
     }
 
-    (*this)[i] = this->rainbow_color_for_index_(i);
+    const uint16_t rainbow_index = static_cast<uint16_t>(
+        (static_cast<uint32_t>(i) + this->rainbow_phase_) % this->num_leds_);
+    (*this)[i] = this->rainbow_color_for_index_(rainbow_index);
   }
 }
 
@@ -542,6 +548,50 @@ void WordClockLight::stop_led_test() {
   this->update_();
 }
 
+std::unique_ptr<esphome::light::LightTransformer>
+WordClockLight::create_default_transition() {
+  // Avoid per-pixel addressable transitions that overwrite the word mask.
+  return esphome::light::LightOutput::create_default_transition();
+}
+
+void WordClockLight::set_render_brightness(float brightness) {
+  if (brightness < 0.0f) {
+    brightness = 0.0f;
+  } else if (brightness > 1.0f) {
+    brightness = 1.0f;
+  }
+
+  if (fabsf(this->pending_render_brightness_ - brightness) < BRIGHTNESS_EPSILON &&
+      (!this->brightness_refresh_pending_ ||
+       fabsf(this->render_brightness_ - brightness) < BRIGHTNESS_EPSILON)) {
+    return;
+  }
+
+  this->pending_render_brightness_ = brightness;
+  const uint32_t now_ms = esphome::millis();
+  if ((now_ms - this->last_brightness_refresh_ms_) < BRIGHTNESS_REFRESH_MIN_INTERVAL_MS) {
+    this->brightness_refresh_pending_ = true;
+    return;
+  }
+
+  this->render_brightness_ = brightness;
+  this->brightness_refresh_pending_ = false;
+  this->last_brightness_refresh_ms_ = now_ms;
+  this->trigger_refresh_();
+}
+
+void WordClockLight::update_state(esphome::light::LightState *state) {
+  if (state == nullptr) {
+    return;
+  }
+
+  float brightness = state->current_values.get_brightness();
+  if (!state->current_values.is_on()) {
+    brightness = 0.0f;
+  }
+  this->set_render_brightness(brightness);
+}
+
 void WordClockLight::write_state(esphome::light::LightState *state) {
   bool new_is_on = this->is_on_;
   if (state != nullptr) {
@@ -641,6 +691,17 @@ void WordClockLight::update_() {
   if (this->time_ == nullptr || !this->is_on_) {
     return;
   }
+
+  if (this->brightness_refresh_pending_ &&
+      (now_ms - this->last_brightness_refresh_ms_) >=
+          BRIGHTNESS_REFRESH_MIN_INTERVAL_MS) {
+    this->render_brightness_ = this->pending_render_brightness_;
+    this->brightness_refresh_pending_ = false;
+    this->last_brightness_refresh_ms_ = now_ms;
+    this->renderer_.reset();
+    this->last_clock_render_ms_ = 0;
+  }
+
   const esphome::ESPTime now = this->time_->now();
   if (!now.is_valid()) {
     return;
@@ -686,11 +747,17 @@ void WordClockLight::update_() {
     return;
   }
 
-  // Keep word-clock refresh at 1 Hz; splash/test run with their own cadence.
-  if ((now_ms - this->last_clock_render_ms_) < 1000) {
+  // Keep normal refresh at 1 Hz; rainbow mode runs faster for visible animation.
+  const uint32_t render_interval_ms =
+      this->rainbow_mode_ ? RAINBOW_RENDER_INTERVAL_MS : 1000;
+  if ((now_ms - this->last_clock_render_ms_) < render_interval_ms) {
     return;
   }
   this->last_clock_render_ms_ = now_ms;
+  if (this->rainbow_mode_ && this->num_leds_ > 0) {
+    this->rainbow_phase_ =
+        static_cast<uint16_t>((this->rainbow_phase_ + 1) % this->num_leds_);
+  }
 
   // Rebuild and send the frame every cycle so stale/corrupted buffer content
   // cannot persist until the next minute boundary.

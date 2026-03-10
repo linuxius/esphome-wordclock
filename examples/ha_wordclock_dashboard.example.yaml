@@ -1,5 +1,6 @@
 # Home Assistant Lovelace dashboard template for HA 2026.3+ (Sections view).
 # Paste into a manual dashboard (Raw configuration editor) or adapt per-view.
+# Uses `custom:mushroom-light-card` for live icon/brightness color feedback.
 #
 # Required entity:
 #   light.word_clock
@@ -17,7 +18,6 @@
 #
 # Optional helper entities (if HA generated them):
 #   select.word_clock_effect
-#   number.word_clock_transition
 #   button.word_clock_flash
 #   button.word_clock_long_flash
 
@@ -35,17 +35,17 @@ views:
             heading: Word Clock
             icon: mdi:clock-time-four-outline
 
-          - type: tile
+          - type: custom:mushroom-light-card
             entity: light.word_clock
             name: Clock
-            vertical: false
+            use_light_color: true
+            show_brightness_control: true
+            show_color_control: false
+            collapsible_controls: false
             tap_action:
               action: toggle
             hold_action:
               action: more-info
-            features_position: bottom
-            features:
-              - type: light-brightness
 
           - type: entities
             title: Clock Settings

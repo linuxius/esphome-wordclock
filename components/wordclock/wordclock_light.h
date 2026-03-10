@@ -72,6 +72,9 @@ class WordClockLight : public esphome::light::AddressableLight {
   }
   void trigger_five_minute_splash() { five_minute_splash_requested_ = true; }
   void set_rainbow_mode(bool rainbow_mode) {
+    if (rainbow_mode_ != rainbow_mode) {
+      rainbow_phase_ = 0;
+    }
     rainbow_mode_ = rainbow_mode;
     trigger_refresh_();
   }
@@ -79,20 +82,14 @@ class WordClockLight : public esphome::light::AddressableLight {
     language_ = language;
     trigger_refresh_();
   }
-  void set_render_brightness(float brightness) {
-    if (brightness < 0.0f) {
-      brightness = 0.0f;
-    } else if (brightness > 1.0f) {
-      brightness = 1.0f;
-    }
-    render_brightness_ = brightness;
-    trigger_refresh_();
-  }
+  void set_render_brightness(float brightness);
   void start_led_test();
   void stop_led_test();
 
   void setup() override;
   void dump_config() override;
+  std::unique_ptr<esphome::light::LightTransformer> create_default_transition() override;
+  void update_state(esphome::light::LightState *state) override;
   void write_state(esphome::light::LightState *state) override;
   float get_setup_priority() const override;
   int32_t size() const override { return this->num_leds_; }
@@ -165,6 +162,7 @@ class WordClockLight : public esphome::light::AddressableLight {
   float render_brightness_{1.0f};
   bool random_colors_{false};
   bool rainbow_mode_{false};
+  uint16_t rainbow_phase_{0};
   bool is_on_{true};
   bool led_test_active_{false};
   uint16_t led_test_index_{0};
@@ -182,6 +180,9 @@ class WordClockLight : public esphome::light::AddressableLight {
   uint8_t five_minute_splash_final_phase_{0};
   uint32_t five_minute_splash_next_frame_ms_{0};
   int32_t last_five_minute_splash_key_{-1};
+  float pending_render_brightness_{1.0f};
+  bool brightness_refresh_pending_{false};
+  uint32_t last_brightness_refresh_ms_{0};
 };
 
 }  // namespace wordclock
