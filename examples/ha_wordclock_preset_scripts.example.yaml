@@ -61,17 +61,3 @@ word_clock_preset_day:
       data:
         brightness_pct: 80
         transition: 1
-
-word_clock_preset_off:
-  alias: Word Clock - Preset Off
-  icon: mdi:power
-  mode: single
-  sequence:
-    - action: automation.turn_off
-      target:
-        entity_id: automation.word_clock_auto_brightness
-    - action: light.turn_off
-      target:
-        entity_id: light.word_clock
-      data:
-        transition: 1
