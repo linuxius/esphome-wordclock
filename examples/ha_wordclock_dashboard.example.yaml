@@ -7,6 +7,7 @@
 #
 # Color preset dropdown entity (adjust if your entity_id differs):
 #   select.word_clock_color_preset
+#   select.word_clock_splash_interval
 #
 # Auto/manual mode entities:
 #   automation.word_clock_auto_brightness
@@ -37,7 +38,7 @@ views:
 
           - type: custom:mushroom-light-card
             entity: light.word_clock
-            name: Clock
+            name: Word Clock Brightness
             use_light_color: true
             show_brightness_control: true
             show_color_control: false
@@ -46,26 +47,21 @@ views:
               action: toggle
             hold_action:
               action: more-info
+            grid_options:
+              columns: full
 
           - type: entities
-            title: Clock Settings
             show_header_toggle: false
             entities:
               - entity: select.word_clock_color_preset
                 name: Color preset
+              - entity: select.word_clock_splash_interval
+                name: Splash Interval
               - entity: automation.word_clock_auto_brightness
                 name: Auto brightness
-              - entity: light.word_clock
-                name: Current state
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Brightness Presets
-            icon: mdi:tune-variant
 
           - type: grid
-            columns: 5
+            columns: 4
             square: false
             cards:
               - type: button
@@ -103,53 +99,3 @@ views:
                   service: script.turn_on
                   target:
                     entity_id: script.word_clock_preset_day
-
-              - type: button
-                name: Off
-                icon: mdi:power
-                tap_action:
-                  action: call-service
-                  service: script.turn_on
-                  target:
-                    entity_id: script.word_clock_preset_off
-
-      # Optional advanced controls (uncomment and adjust entity IDs if needed):
-      #
-      # - type: grid
-      #   cards:
-      #     - type: heading
-      #       heading: Advanced
-      #       icon: mdi:cog
-      #
-      #     - type: grid
-      #       columns: 3
-      #       square: false
-      #       cards:
-      #         - type: button
-      #           name: Flash
-      #           icon: mdi:flash-outline
-      #           tap_action:
-      #             action: call-service
-      #             service: light.turn_on
-      #             target:
-      #               entity_id: light.word_clock
-      #             data:
-      #               flash: short
-      #         - type: button
-      #           name: Long flash
-      #           icon: mdi:flash
-      #           tap_action:
-      #             action: call-service
-      #             service: light.turn_on
-      #             target:
-      #               entity_id: light.word_clock
-      #             data:
-      #               flash: long
-      #         - type: button
-      #           name: Re-sync Auto
-      #           icon: mdi:brightness-auto
-      #           tap_action:
-      #             action: call-service
-      #             service: script.turn_on
-      #             target:
-      #               entity_id: script.word_clock_enable_auto_brightness
