@@ -113,6 +113,24 @@ id(wordclock_light_output).stop_led_test();
 - Swiss map uses minute dots for `+1..+4` minutes.
 - If your board/framework needs explicit RMT component inclusion, ensure your ESP-IDF setup includes `esp_driver_rmt`.
 
+## Reliability Safeguards (Recommended)
+
+For production use, enable recovery timeouts in your device YAML:
+
+```yaml
+safe_mode:
+  reboot_timeout: 5min
+
+api:
+  reboot_timeout: 10min
+
+wifi:
+  reboot_timeout: 10min
+```
+
+These settings help the node recover automatically after repeated failed boots
+or prolonged HA/Wi-Fi disconnect conditions.
+
 ## License and Provenance
 
 - SPDX license for this component: `GPL-3.0-or-later`.
